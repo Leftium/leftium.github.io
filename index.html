@@ -18,6 +18,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    overflow: hidden;
 }
 
 .logo {
@@ -87,6 +89,21 @@ $(document).ready(function() {
 
     $(window).resize(adjustBackgroundSize);
     adjustBackgroundSize();
+
+    // Animate ligature
+    var angle = 0;
+    var $elLigature = $('.logo-ligature');
+    var animate = function(time, lastTime) {
+        if (lastTime != null) {
+            angle += (time - lastTime) * 0.01;
+        }
+        $elLigature.css({
+            top:  (Math.sin(angle/13) * 4) + "px",
+            left: (Math.cos(angle/5)  * 4) + "px"
+        });
+        requestAnimationFrame(newTime => animate(newTime, time));
+    }
+    requestAnimationFrame(animate); // Go!
 });
 
 // Work-around for bug in Ripples (https://github.com/sirxemic/jquery.ripples/issues/59)
