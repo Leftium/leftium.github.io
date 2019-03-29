@@ -98,8 +98,8 @@ $(document).ready(function() {
             angle += (time - lastTime) * 0.01;
         }
         $elLigature.css({
-            top:  (Math.sin(angle/13) * 4) + "px",
-            left: (Math.cos(angle/5)  * 4) + "px"
+            top:  (Math.sin(angle/5)  * 4) + "px",
+            left: (Math.cos(angle/13) * 4) + "px"
         });
         requestAnimationFrame(newTime => animate(newTime, time));
     }
