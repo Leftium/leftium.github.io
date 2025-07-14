@@ -59,67 +59,62 @@
   <img class="logo-ligature" src="le_ligature.png" />
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.2/dist/jquery.ripples.min.js"></script>
-
 <script>
-  $(window).on("load", function () {
-    var $elBackground = $(".logo-background");
+  window.addEventListener("load", function () {
+    const elBackground = document.querySelector(".logo-background");
 
     try {
-      $elBackground.ripples({
-        resolution: $elBackground.outerWidth() / 2,
-        dropRadius: 20, //px
+      /*
+      elBackground.ripples({
+        resolution: elBackground.offsetWidth / 2,
+        dropRadius: 20,
         perturbance: 0.05,
       });
+      */
     } catch (e) {
       console.log(e);
     }
 
     // Automatic drops
     setInterval(function () {
-      var x = Math.random() * $elBackground.outerWidth();
-      var y = Math.random() * $elBackground.outerHeight();
-      var dropRadius = 20;
-      var strength = 0.04 + Math.random() * 0.04;
-      $elBackground.ripples("drop", x, y, dropRadius, strength);
+      const x = Math.random() * elBackground.offsetWidth;
+      const y = Math.random() * elBackground.offsetHeight;
+      const dropRadius = 20;
+      const strength = 0.04 + Math.random() * 0.04;
+      //elBackground.ripples("drop", x, y, dropRadius, strength);
     }, 400);
 
-    $(window).resize(adjustBackgroundSize);
+    window.addEventListener("resize", adjustBackgroundSize);
     adjustBackgroundSize();
 
     // Animate ligature
-    var angle = 0;
-    var $elLigature = $(".logo-ligature");
-    var animate = function (time, lastTime) {
+    let angle = 0;
+    const elLigature = document.querySelector(".logo-ligature");
+    const animate = function (time, lastTime) {
       if (lastTime != null) {
         angle += (time - lastTime) * 0.01;
       }
-      $elLigature.css({
-        top: Math.sin(angle / 5) * 20 + "px",
-        left: Math.cos(angle / 13) * 20 + "px",
-      });
+      elLigature.style.top = `${Math.sin(angle / 5) * 20}px`;
+      elLigature.style.left = `${Math.cos(angle / 13) * 20}px`;
       requestAnimationFrame((newTime) => animate(newTime, time));
     };
-    requestAnimationFrame(animate); // Go!
+    requestAnimationFrame(animate);
   });
 
-  // Work-around for bug in Ripples (https://github.com/sirxemic/jquery.ripples/issues/59)
-  // Adjusts .logo-background so Ripples creates canvas of correct size
   function adjustBackgroundSize() {
-    var $elLigature = $(".logo-ligature");
-    var $elBackground = $(".logo-background");
-    var ligatureWidth = $elLigature.outerWidth();
-    var ratio = 1510 / 2048;
-    var width = Math.min(ligatureWidth, $elLigature.outerHeight()) * ratio;
-    width = Math.floor(width);
+    const elLigature = document.querySelector(".logo-ligature");
+    const elBackground = document.querySelector(".logo-background");
+    const ligatureWidth = elLigature.offsetWidth;
+    const ligatureHeight = elLigature.offsetHeight;
+    const ratio = 1510 / 2048;
+    const width = Math.floor(Math.min(ligatureWidth, ligatureHeight) * ratio);
 
-    $elBackground.css({
-      width: width + "px",
-      height: width + "px",
-      left: (ligatureWidth - width) / 2 + "px",
-      right: (ligatureWidth - width) / 2 + "px",
-    });
-    $elBackground.ripples("updateSize");
+    elBackground.style.width = `${width}px`;
+    elBackground.style.height = `${width}px`;
+    const offset = (ligatureWidth - width) / 2;
+    elBackground.style.left = `${offset}px`;
+    elBackground.style.right = `${offset}px`;
+
+    //elBackground.ripples("updateSize");
   }
 </script>
