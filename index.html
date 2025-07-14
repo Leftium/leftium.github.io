@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Leftium: The Element of Creativity!</title>
 
 <style>
-
-html, body {
+  html,
+  body {
     height: 100%;
     width: 100%;
     margin: 0;
     padding: 0;
-}
+  }
 
-body {
+  body {
     background: black;
 
     display: flex;
@@ -20,24 +20,24 @@ body {
     justify-content: center;
 
     overflow: hidden;
-}
+  }
 
-.logo {
+  .logo {
     max-width: 100%;
     max-height: 100%;
 
     position: relative;
-}
+  }
 
-.logo-ligature {
+  .logo-ligature {
     width: 100%;
     height: 100%;
     object-fit: contain;
     position: relative;
     pointer-events: none;
-}
+  }
 
-.logo-background {
+  .logo-background {
     background-image: url(le_square_light_noborder.png);
     background-size: contain;
     background-position: center; /* Center the image */
@@ -51,42 +51,38 @@ body {
     position: absolute;
     top: 13%;
     left: 13%;
-}
-
+  }
 </style>
 
-
-<div class='logo'>
-    <div class='logo-background'/></div>
-    <img class='logo-ligature' src='le_ligature.png' />
+<div class="logo">
+  <div class="logo-background"></div>
+  <img class="logo-ligature" src="le_ligature.png" />
 </div>
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.2/dist/jquery.ripples.min.js"></script>
 
 <script>
-
-$(window).on('load', function() {
-    var $elBackground = $('.logo-background');
+  $(window).on("load", function () {
+    var $elBackground = $(".logo-background");
 
     try {
-        $elBackground.ripples({
-            resolution:  $elBackground.outerWidth()/2,
-            dropRadius: 20, //px
-            perturbance: 0.05,
-        });
-    } catch(e) {
-        console.log(e);
+      $elBackground.ripples({
+        resolution: $elBackground.outerWidth() / 2,
+        dropRadius: 20, //px
+        perturbance: 0.05,
+      });
+    } catch (e) {
+      console.log(e);
     }
 
     // Automatic drops
-    setInterval(function() {
-        var x = Math.random() * $elBackground.outerWidth();
-        var y = Math.random() * $elBackground.outerHeight();
-        var dropRadius = 20;
-        var strength = 0.04 + Math.random() * 0.04;
-        $elBackground.ripples('drop', x, y, dropRadius, strength);
+    setInterval(function () {
+      var x = Math.random() * $elBackground.outerWidth();
+      var y = Math.random() * $elBackground.outerHeight();
+      var dropRadius = 20;
+      var strength = 0.04 + Math.random() * 0.04;
+      $elBackground.ripples("drop", x, y, dropRadius, strength);
     }, 400);
 
     $(window).resize(adjustBackgroundSize);
@@ -94,37 +90,36 @@ $(window).on('load', function() {
 
     // Animate ligature
     var angle = 0;
-    var $elLigature = $('.logo-ligature');
-    var animate = function(time, lastTime) {
-        if (lastTime != null) {
-            angle += (time - lastTime) * 0.01;
-        }
-        $elLigature.css({
-            top:  (Math.sin(angle/5)  * 20) + "px",
-            left: (Math.cos(angle/13) * 20) + "px"
-        });
-        requestAnimationFrame(newTime => animate(newTime, time));
-    }
+    var $elLigature = $(".logo-ligature");
+    var animate = function (time, lastTime) {
+      if (lastTime != null) {
+        angle += (time - lastTime) * 0.01;
+      }
+      $elLigature.css({
+        top: Math.sin(angle / 5) * 20 + "px",
+        left: Math.cos(angle / 13) * 20 + "px",
+      });
+      requestAnimationFrame((newTime) => animate(newTime, time));
+    };
     requestAnimationFrame(animate); // Go!
-});
+  });
 
-// Work-around for bug in Ripples (https://github.com/sirxemic/jquery.ripples/issues/59)
-// Adjusts .logo-background so Ripples creates canvas of correct size
-function adjustBackgroundSize() {
-    var $elLigature = $('.logo-ligature');
-    var $elBackground = $('.logo-background');
+  // Work-around for bug in Ripples (https://github.com/sirxemic/jquery.ripples/issues/59)
+  // Adjusts .logo-background so Ripples creates canvas of correct size
+  function adjustBackgroundSize() {
+    var $elLigature = $(".logo-ligature");
+    var $elBackground = $(".logo-background");
     var ligatureWidth = $elLigature.outerWidth();
-    var ratio = 1510/2048;
+    var ratio = 1510 / 2048;
     var width = Math.min(ligatureWidth, $elLigature.outerHeight()) * ratio;
     width = Math.floor(width);
 
-
     $elBackground.css({
-        width:  width + 'px',
-        height: width + 'px',
-        left:   (ligatureWidth-width)/2 + 'px',
-        right:  (ligatureWidth-width)/2 + 'px'
+      width: width + "px",
+      height: width + "px",
+      left: (ligatureWidth - width) / 2 + "px",
+      right: (ligatureWidth - width) / 2 + "px",
     });
-    $elBackground.ripples('updateSize');
-}
+    $elBackground.ripples("updateSize");
+  }
 </script>
