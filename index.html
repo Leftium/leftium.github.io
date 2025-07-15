@@ -77,25 +77,25 @@
       console.log(e);
     }
 
-    // Automatic drops
-    setInterval(function () {
-      const x = Math.random() * elBackground.offsetWidth;
-      const y = Math.random() * elBackground.offsetHeight;
-      const dropRadius = 20;
-      const strength = 0.04 + Math.random() * 0.04;
-      ripples.drop(x, y, dropRadius, strength);
-    }, 400);
-
     window.addEventListener("resize", adjustBackgroundSize);
     adjustBackgroundSize();
 
-    // Animate ligature
-    let angle = 0;
     const elLigature = document.querySelector(".logo-ligature");
-    const animate = function (time, lastTime) {
-      if (lastTime != null) {
-        angle += (time - lastTime) * 0.01;
+
+    let lastDropTime = document.timeline.currentTime;
+    const animate = function (time) {
+      // Automatic drops
+      if (time - lastDropTime > 400) {
+        lastDropTime = time;
+        const x = Math.random() * elBackground.offsetWidth;
+        const y = Math.random() * elBackground.offsetHeight;
+        const dropRadius = 20;
+        const strength = 0.04 + Math.random() * 0.04;
+        ripples.drop(x, y, dropRadius, strength);
       }
+
+      // Animate ligature
+      angle = time / 100;
       elLigature.style.top = `${Math.sin(angle / 5) * 20}px`;
       elLigature.style.left = `${Math.cos(angle / 13) * 20}px`;
       requestAnimationFrame((newTime) => animate(newTime, time));
