@@ -96,8 +96,10 @@
 
       // Animate ligature
       angle = time / 100;
-      elLigature.style.top = `${Math.sin(angle / 5) * 20}px`;
-      elLigature.style.left = `${Math.cos(angle / 13) * 20}px`;
+      const magnitude = Math.max(10, elBackground.offsetWidth * 0.05);
+
+      elLigature.style.top = `${Math.sin(angle / 5) * magnitude}px`;
+      elLigature.style.left = `${Math.cos(angle / 13) * magnitude}px`;
       requestAnimationFrame((newTime) => animate(newTime, time));
     };
     requestAnimationFrame(animate);
