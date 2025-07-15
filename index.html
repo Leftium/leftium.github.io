@@ -1,86 +1,62 @@
 <!DOCTYPE html>
-<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Leftium: The Element of Creativity!</title>
 
 <style>
   html,
   body {
     height: 100%;
-    width: 100%;
     margin: 0;
-    padding: 0;
   }
 
   body {
+    display: grid;
+    place-items: center;
+
     background: black;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
     overflow: hidden;
   }
 
-  .logo {
-    max-width: 100%;
-    max-height: 100%;
-
-    position: relative;
-  }
-
+  .logo-background,
   .logo-ligature {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    position: relative;
-    pointer-events: none;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+
+    aspect-ratio: 1;
   }
 
   .logo-background {
+    width: min(70vw, 70vh);
     background-image: url(le_square_light_noborder.png);
-    background-size: contain;
-    background-position: center; /* Center the image */
-    background-repeat: no-repeat; /* Do not repeat the image */
-
     -webkit-tap-highlight-color: transparent; /* Disable blinking */
+  }
 
-    width: 74%;
-    height: 74%;
-
-    position: absolute !important;
-    top: 13%;
-    left: 13%;
+  .logo-ligature {
+    width: min(95vw, 95vh);
   }
 </style>
 
-<div class="logo">
-  <div class="logo-background"></div>
-  <img class="logo-ligature" src="le_ligature.png" />
-</div>
+<div class="logo-background"></div>
+<img class="logo-ligature" src="le_ligature.png" />
 
 <script src="./lib/webgl-ripples.js"></script>
 
 <script>
-  let ripples;
-
   window.addEventListener("load", function () {
     const elBackground = document.querySelector(".logo-background");
+    const elLigature = document.querySelector(".logo-ligature");
+    const dropRadius = 20;
 
+    let ripples;
     try {
       ripples = new Ripples(elBackground, {
         resolution: elBackground.offsetWidth / 2,
-        dropRadius: 20,
+        dropRadius,
         perturbance: 0.05,
       });
     } catch (e) {
       console.log(e);
     }
-
-    window.addEventListener("resize", adjustBackgroundSize);
-    adjustBackgroundSize();
-
-    const elLigature = document.querySelector(".logo-ligature");
 
     let lastDropTime = document.timeline.currentTime;
     const animate = function (time) {
@@ -89,36 +65,18 @@
         lastDropTime = time;
         const x = Math.random() * elBackground.offsetWidth;
         const y = Math.random() * elBackground.offsetHeight;
-        const dropRadius = 20;
         const strength = 0.04 + Math.random() * 0.04;
         ripples.drop(x, y, dropRadius, strength);
       }
 
       // Animate ligature
       angle = time / 100;
-      const magnitude = Math.max(10, elBackground.offsetWidth * 0.05);
+      const dy = 2 * Math.sin(angle / 5);
+      const dx = 2 * Math.cos(angle / 13);
+      elLigature.style.transform = `translate(${dx}%, ${dy}%)`;
 
-      elLigature.style.top = `${Math.sin(angle / 5) * magnitude}px`;
-      elLigature.style.left = `${Math.cos(angle / 13) * magnitude}px`;
-      requestAnimationFrame((newTime) => animate(newTime, time));
+      requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
   });
-
-  function adjustBackgroundSize() {
-    const elLigature = document.querySelector(".logo-ligature");
-    const elBackground = document.querySelector(".logo-background");
-    const ligatureWidth = elLigature.offsetWidth;
-    const ligatureHeight = elLigature.offsetHeight;
-    const ratio = 1510 / 2048;
-    const width = Math.floor(Math.min(ligatureWidth, ligatureHeight) * ratio);
-
-    elBackground.style.width = `${width}px`;
-    elBackground.style.height = `${width}px`;
-    const offset = (ligatureWidth - width) / 2;
-    elBackground.style.left = `${offset}px`;
-    elBackground.style.right = `${offset}px`;
-
-    ripples.updateSize();
-  }
 </script>
