@@ -48,7 +48,7 @@
     width: 74%;
     height: 74%;
 
-    position: absolute;
+    position: absolute !important;
     top: 13%;
     left: 13%;
   }
@@ -59,18 +59,20 @@
   <img class="logo-ligature" src="le_ligature.png" />
 </div>
 
+<script src="./lib/webgl-ripples.js"></script>
+
 <script>
+  let ripples;
+
   window.addEventListener("load", function () {
     const elBackground = document.querySelector(".logo-background");
 
     try {
-      /*
-      elBackground.ripples({
+      ripples = new Ripples(elBackground, {
         resolution: elBackground.offsetWidth / 2,
         dropRadius: 20,
         perturbance: 0.05,
       });
-      */
     } catch (e) {
       console.log(e);
     }
@@ -81,7 +83,7 @@
       const y = Math.random() * elBackground.offsetHeight;
       const dropRadius = 20;
       const strength = 0.04 + Math.random() * 0.04;
-      //elBackground.ripples("drop", x, y, dropRadius, strength);
+      ripples.drop(x, y, dropRadius, strength);
     }, 400);
 
     window.addEventListener("resize", adjustBackgroundSize);
@@ -115,6 +117,6 @@
     elBackground.style.left = `${offset}px`;
     elBackground.style.right = `${offset}px`;
 
-    //elBackground.ripples("updateSize");
+    ripples.updateSize();
   }
 </script>
