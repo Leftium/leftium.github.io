@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Based on https://github.com/sirxemic/jquery.ripples.
 // Modified to handle images with transparent borders
 
