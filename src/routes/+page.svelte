@@ -78,12 +78,14 @@
 	<img src={logoLigature} class="animate no-pointer" alt="" />
 </grid-logo>
 
-<grid-logo class="dark" {@attach logoAnimation}>
-	<img src={logoShadow} class="animate" alt="" />
-	<img src={logoGlow} alt="" />
-	<div class="ripples" style:background-image="url({logoSquare})"></div>
-	<img src={logoLigature} class="animate no-pointer" alt="" />
-</grid-logo>
+<div hidden>
+    <grid-logo class="dark" {@attach logoAnimation}>
+        <img src={logoShadow} class="animate" alt="" />
+        <img src={logoGlow} alt="" />
+        <div class="ripples" style:background-image="url({logoSquare})"></div>
+        <img src={logoLigature} class="animate no-pointer" alt="" />
+    </grid-logo>
+</div>
 
 <style>
 	grid-logo {
@@ -93,8 +95,8 @@
 		* {
 			grid-column: 1 / 2;
 			grid-row: 1 / 2;
-			width: 50vh;
-			height: 50vh;
+			width: calc(min(100vh, 100vw));
+			height: calc(min(100vh, 100vw));
 			/* Ensure all grid siblings share same stacking context;
                otherwise shadow is rendered above square. */
 			z-index: 0;

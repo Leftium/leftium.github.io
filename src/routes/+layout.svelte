@@ -14,5 +14,15 @@
 	:global(body) {
 		margin: 0;
 		overflow: hidden;
+
+		background-color: white;
+		color: black;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:global(body) {
+			background-color: #121212;
+			color: #e0e0e0;
+		}
 	}
 </style>
