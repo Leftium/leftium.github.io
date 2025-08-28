@@ -48,7 +48,7 @@
 					lastDropTime = time;
 					const x = Math.random() * ripplesElement.offsetWidth;
 					const y = Math.random() * ripplesElement.offsetHeight;
-					const strength = 0.04 + Math.random() * 0.04;
+					const strength = 0.1 + Math.random() * 0.04;
 					ripples.drop(x, y, dropRadius, strength);
 				}
 			}
