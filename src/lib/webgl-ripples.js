@@ -1,8 +1,14 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 // Based on https://github.com/sirxemic/jquery.ripples.
 // Modified to handle images with transparent borders
 
-var gl;
+// SSR safety check
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+let gl = null;
+let config = null;
+let transparentPixels = null;
 
 function isPercentage(str) {
 	return str[str.length - 1] === '%';
@@ -12,7 +18,9 @@ function isPercentage(str) {
  *  Load a configuration of GL settings which the browser supports.
  */
 function loadConfig() {
-	var canvas = document.createElement('canvas');
+	if (!isBrowser) return null;
+
+	const canvas = document.createElement('canvas');
 	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
 	if (!gl) {
@@ -21,14 +29,14 @@ function loadConfig() {
 	}
 
 	// Load extensions
-	var extensions = {};
+	const extensions = {};
 	[
 		'OES_texture_float',
 		'OES_texture_half_float',
 		'OES_texture_float_linear',
 		'OES_texture_half_float_linear'
 	].forEach(function (name) {
-		var extension = gl.getExtension(name);
+		const extension = gl.getExtension(name);
 		if (extension) {
 			extensions[name] = extension;
 		}
@@ -39,10 +47,10 @@ function loadConfig() {
 		return null;
 	}
 
-	var configs = [];
+	const configs = [];
 
 	function createConfig(type, glType, arrayType) {
-		var name = 'OES_texture_' + type,
+		const name = 'OES_texture_' + type,
 			nameLinear = name + '_linear',
 			linearSupport = nameLinear in extensions,
 			configExtensions = [name];
@@ -68,8 +76,8 @@ function loadConfig() {
 	}
 
 	// Setup the texture and framebuffer
-	var texture = gl.createTexture();
-	var framebuffer = gl.createFramebuffer();
+	const texture = gl.createTexture();
+	const framebuffer = gl.createFramebuffer();
 
 	gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -79,33 +87,35 @@ function loadConfig() {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
 	// Check for each supported texture type if rendering to it is supported
-	var config = null;
+	let foundConfig = null;
 
-	for (var i = 0; i < configs.length; i++) {
+	for (let i = 0; i < configs.length; i++) {
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, configs[i].type, null);
 
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-			config = configs[i];
+			foundConfig = configs[i];
 			break;
 		}
 	}
 
-	return config;
+	return foundConfig;
 }
 
 function createImageData(width, height) {
+	if (!isBrowser) return null;
+
 	try {
 		return new ImageData(width, height);
-	} catch (e) {
+	} catch {
 		// Fallback for IE
-		var canvas = document.createElement('canvas');
+		const canvas = document.createElement('canvas');
 		return canvas.getContext('2d').createImageData(width, height);
 	}
 }
 
 function translateBackgroundPosition(value) {
-	var parts = value.split(' ');
+	const parts = value.split(' ');
 
 	if (parts.length === 1) {
 		switch (value) {
@@ -142,7 +152,7 @@ function translateBackgroundPosition(value) {
 
 function createProgram(vertexSource, fragmentSource) {
 	function compileSource(type, source) {
-		var shader = gl.createShader(type);
+		const shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
 		gl.compileShader(shader);
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -151,7 +161,7 @@ function createProgram(vertexSource, fragmentSource) {
 		return shader;
 	}
 
-	var program = {};
+	const program = {};
 
 	program.id = gl.createProgram();
 	gl.attachShader(program.id, compileSource(gl.VERTEX_SHADER, vertexSource));
@@ -166,7 +176,7 @@ function createProgram(vertexSource, fragmentSource) {
 	program.locations = {};
 	gl.useProgram(program.id);
 	gl.enableVertexAttribArray(0);
-	var match,
+	let match,
 		name,
 		regex = /uniform (\w+) (\w+)/g,
 		shaderCode = vertexSource + fragmentSource;
@@ -184,7 +194,7 @@ function bindTexture(texture, unit) {
 }
 
 function extractUrl(value) {
-	var urlMatch = /url\(["']?([^"']*)["']?\)/.exec(value);
+	const urlMatch = /url\(["']?([^"']*)["']?\)/.exec(value);
 	if (urlMatch == null) {
 		return null;
 	}
@@ -196,10 +206,13 @@ function isDataUri(url) {
 	return url.match(/^data:/);
 }
 
-var config = loadConfig();
-var transparentPixels = createImageData(32, 32);
+// Initialize config and transparent pixels if in browser
+if (isBrowser) {
+	config = loadConfig();
+	transparentPixels = createImageData(32, 32);
+}
 
-let DEFAULTS = {
+const DEFAULTS = {
 	imageUrl: null,
 	resolution: 256,
 	dropRadius: 20,
@@ -216,7 +229,14 @@ let DEFAULTS = {
 
 class Ripples {
 	constructor(el, options) {
-		var that = this;
+		// SSR safety check
+		if (!isBrowser) {
+			console.warn('Ripples: Cannot initialize in non-browser environment');
+			this.destroyed = true;
+			return;
+		}
+
+		const that = this;
 
 		// Resolve the element from a string selector or use the direct element
 		this.el = typeof el === 'string' ? document.querySelector(el) : el;
@@ -244,7 +264,7 @@ class Ripples {
 		this.contentBounds = this.options.contentBounds;
 
 		// Init WebGL canvas
-		var canvas = document.createElement('canvas');
+		const canvas = document.createElement('canvas');
 		canvas.width = this.el.clientWidth;
 		canvas.height = this.el.clientHeight;
 		this.canvas = canvas;
@@ -282,7 +302,7 @@ class Ripples {
 		}
 
 		this.abortController = new AbortController();
-		let signal = (this.signal = this.abortController.signal);
+		const signal = (this.signal = this.abortController.signal);
 
 		// Auto-resize when window size changes.
 		this.updateSize = this.updateSize.bind(this);
@@ -294,12 +314,12 @@ class Ripples {
 		this.bufferWriteIndex = 0;
 		this.bufferReadIndex = 1;
 
-		var arrayType = config ? config.arrayType : null;
-		var textureData = arrayType ? new arrayType(this.resolution * this.resolution * 4) : null;
+		const arrayType = config ? config.arrayType : null;
+		const textureData = arrayType ? new arrayType(this.resolution * this.resolution * 4) : null;
 
-		for (var i = 0; i < 2; i++) {
-			var texture = gl.createTexture();
-			var framebuffer = gl.createFramebuffer();
+		for (let i = 0; i < 2; i++) {
+			const texture = gl.createTexture();
+			const framebuffer = gl.createFramebuffer();
 
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
@@ -381,7 +401,7 @@ class Ripples {
 
 	// Set up pointer (mouse + touch) events
 	setupPointerEvents() {
-		var that = this;
+		const that = this;
 
 		function dropAtPointerMouseMove(e) {
 			if (that.visible && that.running && that.interactive) {
@@ -391,8 +411,8 @@ class Ripples {
 
 		function dropAtPointerTouch(e) {
 			if (that.visible && that.running && that.interactive) {
-				var touches = e.changedTouches;
-				for (var i = 0; i < touches.length; i++) {
+				const touches = e.changedTouches;
+				for (let i = 0; i < touches.length; i++) {
 					that.dropAtPointer(touches[i], that.dropRadius * 1, 0.01);
 				}
 			}
@@ -404,7 +424,7 @@ class Ripples {
 			}
 		}
 
-		let signal = this.signal;
+		const signal = this.signal;
 		this.el.addEventListener('mousemove', dropAtPointerMouseMove, { signal });
 		this.el.addEventListener('touchmove', dropAtPointerTouch, { signal, passive: false });
 		this.el.addEventListener('touchstart', dropAtPointerTouch, { signal, passive: true });
@@ -413,11 +433,11 @@ class Ripples {
 
 	// Load the image either from the options or the element's CSS rules.
 	loadImage() {
-		var that = this;
+		const that = this;
 
 		gl = this.context;
 
-		var newImageSource =
+		const newImageSource =
 			this.imageUrl ||
 			extractUrl(this.originalCssBackgroundImage) ||
 			extractUrl(getComputedStyle(this.el).backgroundImage);
@@ -436,7 +456,7 @@ class Ripples {
 		}
 
 		// Load the texture from a new image.
-		var image = new Image();
+		const image = new Image();
 		image.onload = function () {
 			gl = that.context;
 
@@ -445,7 +465,7 @@ class Ripples {
 				return (x & (x - 1)) === 0;
 			}
 
-			var wrapping =
+			const wrapping =
 				isPowerOfTwo(image.width) && isPowerOfTwo(image.height) ? gl.REPEAT : gl.CLAMP_TO_EDGE;
 
 			gl.bindTexture(gl.TEXTURE_2D, that.backgroundTexture);
@@ -546,20 +566,20 @@ class Ripples {
 	}
 
 	computeTextureBoundaries() {
-		var elStyle = getComputedStyle(this.el);
-		var backgroundSize = elStyle.backgroundSize;
-		var backgroundAttachment = elStyle.backgroundAttachment;
-		var backgroundPosition = translateBackgroundPosition(elStyle.backgroundPosition);
+		const elStyle = getComputedStyle(this.el);
+		const backgroundSize = elStyle.backgroundSize;
+		const backgroundAttachment = elStyle.backgroundAttachment;
+		const backgroundPosition = translateBackgroundPosition(elStyle.backgroundPosition);
 
 		// Here the 'container' is the element which the background adapts to
 		// (either the chrome window or some element, depending on attachment)
-		var container;
+		let container;
 		if (backgroundAttachment == 'fixed') {
 			container = { left: window.pageXOffset, top: window.pageYOffset };
 			container.width = window.innerWidth;
 			container.height = window.innerHeight;
 		} else {
-			var elRect = this.el.getBoundingClientRect();
+			const elRect = this.el.getBoundingClientRect();
 			container = {
 				left: elRect.left + window.pageXOffset,
 				top: elRect.top + window.pageYOffset
@@ -569,26 +589,27 @@ class Ripples {
 		}
 
 		// TODO: background-clip
+		let backgroundWidth, backgroundHeight;
 		if (backgroundSize == 'cover') {
-			var scale = Math.max(
+			const scale = Math.max(
 				container.width / this.backgroundWidth,
 				container.height / this.backgroundHeight
 			);
 
-			var backgroundWidth = this.backgroundWidth * scale;
-			var backgroundHeight = this.backgroundHeight * scale;
+			backgroundWidth = this.backgroundWidth * scale;
+			backgroundHeight = this.backgroundHeight * scale;
 		} else if (backgroundSize == 'contain') {
-			var scale = Math.min(
+			const scale = Math.min(
 				container.width / this.backgroundWidth,
 				container.height / this.backgroundHeight
 			);
 
-			var backgroundWidth = this.backgroundWidth * scale;
-			var backgroundHeight = this.backgroundHeight * scale;
+			backgroundWidth = this.backgroundWidth * scale;
+			backgroundHeight = this.backgroundHeight * scale;
 		} else {
-			backgroundSize = backgroundSize.split(' ');
-			var backgroundWidth = backgroundSize[0] || '';
-			var backgroundHeight = backgroundSize[1] || backgroundWidth;
+			const size = backgroundSize.split(' ');
+			backgroundWidth = size[0] || '';
+			backgroundHeight = size[1] || backgroundWidth;
 
 			if (isPercentage(backgroundWidth)) {
 				backgroundWidth = (container.width * parseFloat(backgroundWidth)) / 100;
@@ -617,8 +638,8 @@ class Ripples {
 		}
 
 		// Compute backgroundX and backgroundY in page coordinates
-		var backgroundX = backgroundPosition[0];
-		var backgroundY = backgroundPosition[1];
+		let backgroundX = backgroundPosition[0];
+		let backgroundY = backgroundPosition[1];
 
 		if (isPercentage(backgroundX)) {
 			backgroundX =
@@ -634,8 +655,8 @@ class Ripples {
 			backgroundY = container.top + parseFloat(backgroundY);
 		}
 
-		var elementRect = this.el.getBoundingClientRect();
-		var elementOffset = {
+		const elementRect = this.el.getBoundingClientRect();
+		const elementOffset = {
 			left: elementRect.left + window.pageXOffset,
 			top: elementRect.top + window.pageYOffset
 		};
@@ -667,7 +688,7 @@ class Ripples {
 			]);
 		}
 
-		var maxSide = Math.max(this.canvas.width, this.canvas.height);
+		const maxSide = Math.max(this.canvas.width, this.canvas.height);
 
 		this.renderProgram.uniforms.containerRatio = new Float32Array([
 			this.canvas.width / maxSide,
@@ -679,7 +700,7 @@ class Ripples {
 		// Ensure GL context is available before creating shaders
 		if (!gl) return;
 
-		var vertexShader = [
+		const vertexShader = [
 			'attribute vec2 vertex;',
 			'varying vec2 coord;',
 			'void main() {',
@@ -827,11 +848,11 @@ class Ripples {
 
 	dropAtPointer(pointer, radius, strength) {
 		// Get the canvas element's bounding rect for accurate position
-		var canvasRect = this.canvas.getBoundingClientRect();
+		const canvasRect = this.canvas.getBoundingClientRect();
 
 		// Calculate position relative to canvas
 		// Use clientX/clientY if available (mouse events), otherwise use pageX/pageY (touch events)
-		var x, y;
+		let x, y;
 		if (pointer.clientX !== undefined) {
 			x = pointer.clientX - canvasRect.left;
 			y = pointer.clientY - canvasRect.top;
@@ -862,17 +883,17 @@ class Ripples {
 		gl = this.context;
 		if (!gl) return;
 
-		var elWidth = this.contentBounds
+		const elWidth = this.contentBounds
 			? (this.el.clientWidth * this.contentBounds.width) / 100
 			: this.el.clientWidth;
-		var elHeight = this.contentBounds
+		const elHeight = this.contentBounds
 			? (this.el.clientHeight * this.contentBounds.height) / 100
 			: this.el.clientHeight;
-		var longestSide = Math.max(elWidth, elHeight);
+		const longestSide = Math.max(elWidth, elHeight);
 
 		radius = radius / longestSide;
 
-		var dropPosition = new Float32Array([
+		const dropPosition = new Float32Array([
 			(2 * x - elWidth) / longestSide,
 			(elHeight - 2 * y) / longestSide
 		]);
@@ -893,8 +914,8 @@ class Ripples {
 	}
 
 	updateSize() {
-		var newWidth = this.el.clientWidth;
-		var newHeight = this.el.clientHeight;
+		let newWidth = this.el.clientWidth;
+		let newHeight = this.el.clientHeight;
 
 		// NEW: Adjust for content bounds if specified
 		if (this.contentBounds) {
@@ -910,19 +931,27 @@ class Ripples {
 
 	destroy() {
 		// Remove event listeners
-		this.abortController.abort();
+		if (this.abortController) {
+			this.abortController.abort();
+		}
 
-		this.canvas.remove();
+		if (this.canvas) {
+			this.canvas.remove();
+		}
 
 		// Clean up WebGL resources
 		if (gl) {
-			gl.deleteBuffer(this.quad);
-			gl.deleteProgram(this.dropProgram.id);
-			gl.deleteProgram(this.updateProgram.id);
-			gl.deleteProgram(this.renderProgram.id);
-			gl.deleteTexture(this.backgroundTexture);
-			this.textures.forEach((tex) => gl.deleteTexture(tex));
-			this.framebuffers.forEach((fb) => gl.deleteFramebuffer(fb));
+			if (this.quad) gl.deleteBuffer(this.quad);
+			if (this.dropProgram) gl.deleteProgram(this.dropProgram.id);
+			if (this.updateProgram) gl.deleteProgram(this.updateProgram.id);
+			if (this.renderProgram) gl.deleteProgram(this.renderProgram.id);
+			if (this.backgroundTexture) gl.deleteTexture(this.backgroundTexture);
+			if (this.textures) {
+				this.textures.forEach((tex) => gl.deleteTexture(tex));
+			}
+			if (this.framebuffers) {
+				this.framebuffers.forEach((fb) => gl.deleteFramebuffer(fb));
+			}
 			gl = null;
 		}
 
@@ -970,15 +999,16 @@ class Ripples {
 	}
 }
 
-// Expose the constructor globally
-window.Ripples = Ripples;
+// Export the class as ES module
+export { Ripples };
 
-// Initial check for WebGL support
-if (!config) {
-	console.error(
-		'Ripples.js: Your browser does not support WebGL, the OES_texture_float extension or rendering to floating point textures. Ripples will not initialize.'
-	);
-	window.Ripples = function () {
-		console.error('Ripples.js: WebGL not supported. Cannot create Ripples instance.');
-	};
-}
+// Also export as default for convenience
+export default Ripples;
+
+// Check WebGL support status
+export const isWebGLSupported = () => {
+	if (!isBrowser) return false;
+
+	// Check if config was successfully loaded
+	return config !== null;
+};

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Attachment } from 'svelte/attachments';
+	import { Ripples } from '$lib/webgl-ripples';
 
 	import logoGlow from '$lib/assets/logo-layers/glow.webp';
 	import logoLigature from '$lib/assets/logo-layers/ligature.webp';
@@ -17,32 +18,28 @@
 		let angle = $state(0);
 		let lastDropTime = $state(0);
 
-		(async () => {
-			if (!ripplesElement) {
-				return;
-			}
-			// @ts-expect-error
-			await import('$lib/webgl-ripples');
-			try {
-				// Apply ripples to the container but confine them to the content area
-				const resolution = Math.min(512, ripplesElement.offsetWidth / 2);
-				ripples = new Ripples(ripplesElement, {
-					resolution,
-					dropRadius,
-					perturbance: 0.01,
-					// contentBounds tells the library where the actual content is
-					// (in case of image with transparent margins)
-					contentBounds: {
-						x: 14.5,
-						y: 17,
-						width: 66.5,
-						height: 66
-					}
-				});
-			} catch (e) {
-				console.log(e);
-			}
-		})();
+		if (!ripplesElement) {
+			return;
+		}
+		try {
+			// Apply ripples to the container but confine them to the content area
+			const resolution = Math.min(512, ripplesElement.offsetWidth / 2);
+			ripples = new Ripples(ripplesElement, {
+				resolution,
+				dropRadius,
+				perturbance: 0.01,
+				// contentBounds tells the library where the actual content is
+				// (in case of image with transparent margins)
+				contentBounds: {
+					x: 14.5,
+					y: 17,
+					width: 66.5,
+					height: 66
+				}
+			});
+		} catch (e) {
+			console.log(e);
+		}
 
 		function animate(time: number) {
 			// Automatic drops
