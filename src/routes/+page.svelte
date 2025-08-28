@@ -91,8 +91,8 @@
 		* {
 			grid-column: 1 / 2;
 			grid-row: 1 / 2;
-			width: calc(min(100vh, 100vw));
-			height: calc(min(100vh, 100vw));
+			width: calc(min(90svh, 90svw));
+			height: calc(min(90svh, 90svw));
 			/* Ensure all grid siblings share same stacking context;
                otherwise shadow is rendered above square. */
 			z-index: 0;
