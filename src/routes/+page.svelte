@@ -7,13 +7,56 @@
 	import logoSquare from '$lib/assets/logo-layers/square.webp';
 
 	const logoAnimation: Attachment = (element) => {
+		const ripplesElement = element.getElementsByClassName('ripples')[0] as HTMLElement | undefined;
+		const dropRadius = 20;
 		const animatedElements = [...element.children].filter((child) =>
 			child.classList.contains('animate')
 		);
 
+		let ripples: Ripples;
 		let angle = $state(0);
+		let lastDropTime = $state(0);
+
+		(async () => {
+			if (!ripplesElement) {
+				return;
+			}
+			// @ts-expect-error
+			await import('$lib/webgl-ripples');
+			try {
+				// Apply ripples to the container but confine them to the content area
+				const resolution = Math.min(512, ripplesElement.offsetWidth / 2);
+				ripples = new Ripples(ripplesElement, {
+					resolution,
+					dropRadius,
+					perturbance: 0.05,
+					// contentBounds tells the library where the actual content is
+					// (in case of image with transparent margins)
+					contentBounds: {
+						x: 14.5,
+						y: 17,
+						width: 66.5,
+						height: 66
+					}
+				});
+			} catch (e) {
+				console.log(e);
+			}
+		})();
 
 		function animate(time: number) {
+			// Automatic drops
+
+			if (lastDropTime !== null && ripples && ripplesElement) {
+				if (time - lastDropTime > 1500) {
+					lastDropTime = time;
+					const x = Math.random() * ripplesElement.offsetWidth;
+					const y = Math.random() * ripplesElement.offsetHeight;
+					const strength = 0.04 + Math.random() * 0.04;
+					ripples.drop(x, y, dropRadius, strength);
+				}
+			}
+
 			// Animate ligature
 			angle = time / 100;
 			const dy = 2 + 2 * Math.sin(angle / 5);
@@ -31,15 +74,15 @@
 <grid-logo {@attach logoAnimation}>
 	<img src={logoShadow} class="animate" alt="" />
 	<img src={logoGlow} alt="" />
-	<img src={logoSquare} alt="" />
-	<img src={logoLigature} class="animate" alt="" />
+	<div class="ripples" style:background-image="url({logoSquare})"></div>
+	<img src={logoLigature} class="animate no-pointer" alt="" />
 </grid-logo>
 
 <grid-logo class="dark" {@attach logoAnimation}>
 	<img src={logoShadow} class="animate" alt="" />
 	<img src={logoGlow} alt="" />
-	<img src={logoSquare} alt="" />
-	<img src={logoLigature} class="animate" alt="" />
+	<div class="ripples" style:background-image="url({logoSquare})"></div>
+	<img src={logoLigature} class="animate no-pointer" alt="" />
 </grid-logo>
 
 <style>
@@ -47,14 +90,25 @@
 		display: grid;
 		place-items: center;
 
-		img {
+		* {
 			grid-column: 1 / 2;
 			grid-row: 1 / 2;
+			width: 50vh;
 			height: 50vh;
-
 			/* Ensure all grid siblings share same stacking context;
                otherwise shadow is rendered above square. */
 			z-index: 0;
+		}
+
+		div {
+			position: relative;
+			background-size: 100% 100%;
+			background-position: center;
+			background-repeat: no-repeat;
+		}
+
+		.no-pointer {
+			pointer-events: none;
 		}
 
 		&.dark {
