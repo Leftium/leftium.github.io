@@ -29,7 +29,7 @@
 				ripples = new Ripples(ripplesElement, {
 					resolution,
 					dropRadius,
-					perturbance: 0.05,
+					perturbance: 0.01,
 					// contentBounds tells the library where the actual content is
 					// (in case of image with transparent margins)
 					contentBounds: {
@@ -79,12 +79,12 @@
 </grid-logo>
 
 <div hidden>
-    <grid-logo class="dark" {@attach logoAnimation}>
-        <img src={logoShadow} class="animate" alt="" />
-        <img src={logoGlow} alt="" />
-        <div class="ripples" style:background-image="url({logoSquare})"></div>
-        <img src={logoLigature} class="animate no-pointer" alt="" />
-    </grid-logo>
+	<grid-logo class="dark" {@attach logoAnimation}>
+		<img src={logoShadow} class="animate" alt="" />
+		<img src={logoGlow} alt="" />
+		<div class="ripples" style:background-image="url({logoSquare})"></div>
+		<img src={logoLigature} class="animate no-pointer" alt="" />
+	</grid-logo>
 </div>
 
 <style>

@@ -729,6 +729,13 @@ class Ripples {
 				'vec2 dx = vec2(delta.x, 0.0);',
 				'vec2 dy = vec2(0.0, delta.y);',
 
+				'// Detect edges and apply boundary conditions',
+				'float edgeFactor = 1.0;',
+				'if (coord.x <= delta.x || coord.x >= 1.0 - delta.x ||',
+				'    coord.y <= delta.y || coord.y >= 1.0 - delta.y) {',
+				'    edgeFactor = 0.95; // Dampen waves near edges more aggressively',
+				'}',
+
 				'float average = (',
 				'texture2D(texture, coord - dx).r +',
 				'texture2D(texture, coord - dy).r +',
@@ -737,8 +744,12 @@ class Ripples {
 				') * 0.25;',
 
 				'info.g += (average - info.r) * 2.0;',
-				'info.g *= 0.995;',
+				'info.g *= 0.995 * edgeFactor;', // Apply edge dampening
 				'info.r += info.g;',
+
+				'// Clamp values to prevent overflow artifacts',
+				'info.r = clamp(info.r, -1.0, 1.0);',
+				'info.g = clamp(info.g, -1.0, 1.0);',
 
 				'gl_FragColor = info;',
 				'}'
@@ -776,13 +787,22 @@ class Ripples {
 
 				'void main() {',
 				'float height = texture2D(samplerRipples, ripplesCoord).r;',
-				'float heightX = texture2D(samplerRipples, vec2(ripplesCoord.x + delta.x, ripplesCoord.y)).r;',
-				'float heightY = texture2D(samplerRipples, vec2(ripplesCoord.x, ripplesCoord.y + delta.y)).r;',
-				'vec3 dx = vec3(delta.x, heightX - height, 0.0);',
-				'vec3 dy = vec3(0.0, heightY - height, delta.y);',
+				'// Sample neighboring pixels for calculating normals',
+				'vec2 texelSize = delta;',
+				'float heightX = texture2D(samplerRipples, clamp(ripplesCoord + vec2(texelSize.x, 0.0), 0.0, 1.0)).r;',
+				'float heightY = texture2D(samplerRipples, clamp(ripplesCoord + vec2(0.0, texelSize.y), 0.0, 1.0)).r;',
+				'vec3 dx = vec3(texelSize.x, heightX - height, 0.0);',
+				'vec3 dy = vec3(0.0, heightY - height, texelSize.y);',
 				'vec2 offset = -normalize(cross(dy, dx)).xz;',
-				'float specular = pow(max(0.0, dot(offset, normalize(vec2(-0.6, 1.0)))), 4.0);',
-				'gl_FragColor = texture2D(samplerBackground, backgroundCoord + offset * perturbance) + specular;',
+				'// Apply edge fading to reduce artifacts at boundaries',
+				'float edgeFade = 1.0;',
+				'float edgeDistance = 0.05;', // Distance from edge to start fading
+				'edgeFade *= smoothstep(0.0, edgeDistance, ripplesCoord.x);',
+				'edgeFade *= smoothstep(0.0, edgeDistance, ripplesCoord.y);',
+				'edgeFade *= smoothstep(0.0, edgeDistance, 1.0 - ripplesCoord.x);',
+				'edgeFade *= smoothstep(0.0, edgeDistance, 1.0 - ripplesCoord.y);',
+				'float specular = pow(max(0.0, dot(offset, normalize(vec2(-0.6, 1.0)))), 4.0) * edgeFade;',
+				'gl_FragColor = texture2D(samplerBackground, backgroundCoord + offset * perturbance * edgeFade) + specular;',
 				'}'
 			].join('\n')
 		);
