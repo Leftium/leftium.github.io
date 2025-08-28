@@ -18,27 +18,26 @@
 		let angle = $state(0);
 		let lastDropTime = $state(0);
 
-		if (!ripplesElement) {
-			return;
-		}
-		try {
-			// Apply ripples to the container but confine them to the content area
-			const resolution = Math.min(512, ripplesElement.offsetWidth / 2);
-			ripples = new Ripples(ripplesElement, {
-				resolution,
-				dropRadius,
-				perturbance: 0.01,
-				// contentBounds tells the library where the actual content is
-				// (in case of image with transparent margins)
-				contentBounds: {
-					x: 14.5,
-					y: 17,
-					width: 66.5,
-					height: 66
-				}
-			});
-		} catch (e) {
-			console.log(e);
+		if (ripplesElement) {
+			try {
+				// Apply ripples to the container but confine them to the content area
+				const resolution = Math.min(512, ripplesElement.offsetWidth / 2);
+				ripples = new Ripples(ripplesElement, {
+					resolution,
+					dropRadius,
+					perturbance: 0.01,
+					// contentBounds tells the library where the actual content is
+					// (in case of image with transparent margins)
+					contentBounds: {
+						x: 14.5,
+						y: 17,
+						width: 66.5,
+						height: 66
+					}
+				});
+			} catch (e) {
+				console.log(e);
+			}
 		}
 
 		function animate(time: number) {
