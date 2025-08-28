@@ -220,7 +220,6 @@ const DEFAULTS = {
 	interactive: true,
 	crossOrigin: '',
 	// NEW: Options for handling transparent margins
-	clipToContent: false, // Whether to clip ripples to visible content
 	contentBounds: null // Manual override for content bounds {x, y, width, height} as percentages
 };
 
@@ -258,7 +257,6 @@ class Ripples {
 		this.imageUrl = this.options.imageUrl;
 
 		// NEW: Store content clipping options
-		this.clipToContent = this.options.clipToContent;
 		this.contentBounds = this.options.contentBounds;
 
 		// Init WebGL canvas

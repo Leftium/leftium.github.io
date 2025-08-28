@@ -5,7 +5,6 @@ export interface RipplesOptions {
 	perturbance?: number;
 	interactive?: boolean;
 	crossOrigin?: string;
-	clipToContent?: boolean;
 	contentBounds?: {
 		x: number;
 		y: number;
