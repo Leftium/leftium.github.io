@@ -35,7 +35,7 @@ function loadConfig() {
 		'OES_texture_half_float',
 		'OES_texture_float_linear',
 		'OES_texture_half_float_linear'
-	].forEach(function (name) {
+	].forEach((name) => {
 		const extension = gl.getExtension(name);
 		if (extension) {
 			extensions[name] = extension;
@@ -133,7 +133,7 @@ function translateBackgroundPosition(value) {
 				return [value, '50%'];
 		}
 	} else {
-		return parts.map(function (part) {
+		return parts.map((part) => {
 			switch (value) {
 				case 'center':
 					return '50%';
@@ -236,8 +236,6 @@ class Ripples {
 			return;
 		}
 
-		const that = this;
-
 		// Resolve the element from a string selector or use the direct element
 		this.el = typeof el === 'string' ? document.querySelector(el) : el;
 		if (!this.el) {
@@ -296,7 +294,7 @@ class Ripples {
 
 		// Load extensions
 		if (config && config.extensions) {
-			config.extensions.forEach(function (name) {
+			config.extensions.forEach((name) => {
 				gl.getExtension(name);
 			});
 		}
@@ -387,12 +385,12 @@ class Ripples {
 		this.setupPointerEvents();
 
 		// Init animation
-		function step() {
-			if (!that.destroyed) {
-				that.step();
+		const step = () => {
+			if (!this.destroyed) {
+				this.step();
 				requestAnimationFrame(step);
 			}
-		}
+		};
 
 		requestAnimationFrame(step);
 
@@ -401,28 +399,26 @@ class Ripples {
 
 	// Set up pointer (mouse + touch) events
 	setupPointerEvents() {
-		const that = this;
-
-		function dropAtPointerMouseMove(e) {
-			if (that.visible && that.running && that.interactive) {
-				that.dropAtPointer(e, that.dropRadius * 1, 0.01);
+		const dropAtPointerMouseMove = (e) => {
+			if (this.visible && this.running && this.interactive) {
+				this.dropAtPointer(e, this.dropRadius * 1, 0.01);
 			}
-		}
+		};
 
-		function dropAtPointerTouch(e) {
-			if (that.visible && that.running && that.interactive) {
+		const dropAtPointerTouch = (e) => {
+			if (this.visible && this.running && this.interactive) {
 				const touches = e.changedTouches;
 				for (let i = 0; i < touches.length; i++) {
-					that.dropAtPointer(touches[i], that.dropRadius * 1, 0.01);
+					this.dropAtPointer(touches[i], this.dropRadius * 1, 0.01);
 				}
 			}
-		}
+		};
 
-		function dropAtPointerMouseDown(e) {
-			if (that.visible && that.running && that.interactive) {
-				that.dropAtPointer(e, that.dropRadius * 1.5, 0.14);
+		const dropAtPointerMouseDown = (e) => {
+			if (this.visible && this.running && this.interactive) {
+				this.dropAtPointer(e, this.dropRadius * 1.5, 0.14);
 			}
-		}
+		};
 
 		const signal = this.signal;
 		this.el.addEventListener('mousemove', dropAtPointerMouseMove, { signal });
@@ -433,8 +429,6 @@ class Ripples {
 
 	// Load the image either from the options or the element's CSS rules.
 	loadImage() {
-		const that = this;
-
 		gl = this.context;
 
 		const newImageSource =
@@ -457,8 +451,8 @@ class Ripples {
 
 		// Load the texture from a new image.
 		const image = new Image();
-		image.onload = function () {
-			gl = that.context;
+		image.onload = () => {
+			gl = this.context;
 
 			// Only textures with dimensions of powers of two can have repeat wrapping.
 			function isPowerOfTwo(x) {
@@ -468,19 +462,19 @@ class Ripples {
 			const wrapping =
 				isPowerOfTwo(image.width) && isPowerOfTwo(image.height) ? gl.REPEAT : gl.CLAMP_TO_EDGE;
 
-			gl.bindTexture(gl.TEXTURE_2D, that.backgroundTexture);
+			gl.bindTexture(gl.TEXTURE_2D, this.backgroundTexture);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapping);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapping);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-			that.backgroundWidth = image.width;
-			that.backgroundHeight = image.height;
+			this.backgroundWidth = image.width;
+			this.backgroundHeight = image.height;
 		};
 
 		// Fall back to a transparent texture when loading the image failed.
-		image.onerror = function () {
-			gl = that.context;
-			that.setTransparentTexture();
+		image.onerror = () => {
+			gl = this.context;
+			this.setTransparentTexture();
 		};
 
 		// Disable CORS when the image source is a data URI.
