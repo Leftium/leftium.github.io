@@ -259,10 +259,25 @@ class Ripples {
 		// NEW: Store content clipping options
 		this.contentBounds = this.options.contentBounds;
 
+		// Check if element has valid dimensions
+		const elWidth = this.el.clientWidth;
+		const elHeight = this.el.clientHeight;
+
+		if (elWidth === 0 || elHeight === 0) {
+			console.warn('Ripples: Element has zero dimensions. Deferring initialization.');
+			this.pendingInitialization = true;
+			this.destroyed = false;
+			this.visible = false;
+			this.running = false;
+			this.inited = false;
+			this.observeVisibility();
+			return;
+		}
+
 		// Init WebGL canvas
 		const canvas = document.createElement('canvas');
-		canvas.width = this.el.clientWidth;
-		canvas.height = this.el.clientHeight;
+		canvas.width = elWidth;
+		canvas.height = elHeight;
 		this.canvas = canvas;
 		this.canvas.style.position = 'absolute';
 
@@ -274,10 +289,22 @@ class Ripples {
 			canvas.style.width = bounds.width + '%';
 			canvas.style.height = bounds.height + '%';
 			// Recalculate actual canvas dimensions
-			canvas.width = (this.el.clientWidth * bounds.width) / 100;
-			canvas.height = (this.el.clientHeight * bounds.height) / 100;
+			canvas.width = (elWidth * bounds.width) / 100;
+			canvas.height = (elHeight * bounds.height) / 100;
 		} else {
 			this.canvas.style.inset = 0;
+		}
+
+		// Ensure canvas has valid dimensions
+		if (canvas.width === 0 || canvas.height === 0) {
+			console.warn('Ripples: Canvas has zero dimensions. Deferring initialization.');
+			this.pendingInitialization = true;
+			this.destroyed = false;
+			this.visible = false;
+			this.running = false;
+			this.inited = false;
+			this.observeVisibility();
+			return;
 		}
 
 		this.el.append(canvas);
@@ -395,6 +422,85 @@ class Ripples {
 		return this;
 	}
 
+	// Observe element visibility and size changes
+	observeVisibility() {
+		if (!isBrowser || !this.el) return;
+
+		// Use both ResizeObserver and IntersectionObserver for robust detection
+		if (typeof ResizeObserver !== 'undefined') {
+			this.resizeObserver = new ResizeObserver(() => {
+				if (this.pendingInitialization) {
+					const width = this.el.clientWidth;
+					const height = this.el.clientHeight;
+					if (width > 0 && height > 0) {
+						this.completeInitialization();
+					}
+				} else if (this.inited && this.canvas) {
+					this.updateSize();
+				}
+			});
+			this.resizeObserver.observe(this.el);
+		}
+
+		// Also use IntersectionObserver to detect when element becomes visible
+		if (typeof IntersectionObserver !== 'undefined') {
+			this.intersectionObserver = new IntersectionObserver((entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting && this.pendingInitialization) {
+						const width = this.el.clientWidth;
+						const height = this.el.clientHeight;
+						if (width > 0 && height > 0) {
+							this.completeInitialization();
+						}
+					}
+				});
+			});
+			this.intersectionObserver.observe(this.el);
+		}
+
+		// Fallback: periodically check dimensions
+		if (!this.resizeObserver && !this.intersectionObserver) {
+			this.visibilityCheckInterval = setInterval(() => {
+				if (this.pendingInitialization) {
+					const width = this.el.clientWidth;
+					const height = this.el.clientHeight;
+					if (width > 0 && height > 0) {
+						this.completeInitialization();
+					}
+				}
+			}, 500);
+		}
+	}
+
+	// Complete initialization when element becomes visible
+	completeInitialization() {
+		if (!this.pendingInitialization || this.inited) return;
+
+		console.log('Ripples: Element now visible, completing initialization.');
+		this.pendingInitialization = false;
+
+		// Clean up observers
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+			this.resizeObserver = null;
+		}
+		if (this.intersectionObserver) {
+			this.intersectionObserver.disconnect();
+			this.intersectionObserver = null;
+		}
+		if (this.visibilityCheckInterval) {
+			clearInterval(this.visibilityCheckInterval);
+			this.visibilityCheckInterval = null;
+		}
+
+		// Re-run initialization with the stored options
+		const options = this.options;
+		const el = this.el;
+
+		// Reset and re-initialize
+		Object.assign(this, new Ripples(el, options));
+	}
+
 	// Set up pointer (mouse + touch) events
 	setupPointerEvents() {
 		const dropAtPointerMouseMove = (e) => {
@@ -482,10 +588,16 @@ class Ripples {
 	}
 
 	step() {
+		// Skip if pending initialization or destroyed
+		if (this.pendingInitialization || this.destroyed) return;
+
 		gl = this.context;
 
 		// Ensure GL context is available before proceeding
-		if (!gl) return;
+		if (!gl || !this.canvas) return;
+
+		// Skip if canvas has zero dimensions
+		if (this.canvas.width === 0 || this.canvas.height === 0) return;
 
 		if (!this.visible) {
 			return;
@@ -507,7 +619,10 @@ class Ripples {
 	}
 
 	render() {
-		if (!gl) return;
+		if (!gl || !this.canvas) return;
+
+		// Skip rendering if canvas has zero dimensions
+		if (this.canvas.width === 0 || this.canvas.height === 0) return;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
@@ -539,7 +654,7 @@ class Ripples {
 	}
 
 	update() {
-		if (!gl) return;
+		if (!gl || this.resolution === 0) return;
 
 		gl.viewport(0, 0, this.resolution, this.resolution);
 
@@ -839,6 +954,9 @@ class Ripples {
 	}
 
 	dropAtPointer(pointer, radius, strength) {
+		// Skip if not initialized or canvas is missing
+		if (!this.canvas || this.pendingInitialization) return;
+
 		// Get the canvas element's bounding rect for accurate position
 		const canvasRect = this.canvas.getBoundingClientRect();
 
@@ -922,6 +1040,20 @@ class Ripples {
 	}
 
 	destroy() {
+		// Clean up observers
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+			this.resizeObserver = null;
+		}
+		if (this.intersectionObserver) {
+			this.intersectionObserver.disconnect();
+			this.intersectionObserver = null;
+		}
+		if (this.visibilityCheckInterval) {
+			clearInterval(this.visibilityCheckInterval);
+			this.visibilityCheckInterval = null;
+		}
+
 		// Remove event listeners
 		if (this.abortController) {
 			this.abortController.abort();
