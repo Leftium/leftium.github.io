@@ -74,6 +74,8 @@
 	<img src={logoLigature} class="animate no-pointer" alt="" />
 </grid-logo>
 
+<center>View the <a href="https://github.com/Leftium/leftium.github.io">source code</a>!</center>
+
 <div hidden>
 	<grid-logo class="dark" {@attach logoAnimation}>
 		<img src={logoShadow} class="animate" alt="" />
@@ -112,5 +114,9 @@
 		&.dark {
 			background-color: black;
 		}
+	}
+
+	center {
+		font-family: sans-serif;
 	}
 </style>
