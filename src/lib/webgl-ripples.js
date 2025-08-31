@@ -1040,6 +1040,9 @@ class Ripples {
 	}
 
 	destroy() {
+		// Mark as destroyed first to stop any running animations
+		this.destroyed = true;
+
 		// Clean up observers
 		if (this.resizeObserver) {
 			this.resizeObserver.disconnect();
@@ -1063,23 +1066,26 @@ class Ripples {
 			this.canvas.remove();
 		}
 
-		// Clean up WebGL resources
-		if (gl) {
-			if (this.quad) gl.deleteBuffer(this.quad);
-			if (this.dropProgram) gl.deleteProgram(this.dropProgram.id);
-			if (this.updateProgram) gl.deleteProgram(this.updateProgram.id);
-			if (this.renderProgram) gl.deleteProgram(this.renderProgram.id);
-			if (this.backgroundTexture) gl.deleteTexture(this.backgroundTexture);
+		// Clean up WebGL resources using the instance's context
+		const ctx = this.context;
+		if (ctx) {
+			if (this.quad) ctx.deleteBuffer(this.quad);
+			if (this.dropProgram) ctx.deleteProgram(this.dropProgram.id);
+			if (this.updateProgram) ctx.deleteProgram(this.updateProgram.id);
+			if (this.renderProgram) ctx.deleteProgram(this.renderProgram.id);
+			if (this.backgroundTexture) ctx.deleteTexture(this.backgroundTexture);
 			if (this.textures) {
-				this.textures.forEach((tex) => gl.deleteTexture(tex));
+				this.textures.forEach((tex) => ctx.deleteTexture(tex));
 			}
 			if (this.framebuffers) {
-				this.framebuffers.forEach((fb) => gl.deleteFramebuffer(fb));
+				this.framebuffers.forEach((fb) => ctx.deleteFramebuffer(fb));
 			}
-			gl = null;
+			// Only clear global gl if it matches this instance's context
+			if (gl === ctx) {
+				gl = null;
+			}
+			this.context = null;
 		}
-
-		this.destroyed = true;
 	}
 
 	pause() {
