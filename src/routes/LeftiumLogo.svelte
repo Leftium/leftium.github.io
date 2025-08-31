@@ -56,9 +56,12 @@
 			}
 		}
 
+		let lastTime = 0;
 		function animate(time: number) {
-			// Automatic drops
+			const deltaTime = lastTime ? time - lastTime : 0;
+			lastTime = time;
 
+			// Automatic drops
 			if (lastDropTime !== null && ripples && ripplesElement) {
 				if (time - lastDropTime > 1500) {
 					lastDropTime = time;
@@ -70,9 +73,10 @@
 			}
 
 			// Animate ligature
-			angle = time / 100;
-			const dy = !isAnimated ? 0 : 2 + 2 * Math.sin(angle / 5);
-			const dx = !isAnimated ? 0 : 2 + 2 * Math.cos(angle / 13);
+
+			angle = isAnimated ? angle + deltaTime / 100 : 0;
+			const dy = !isAnimated ? 0 : 2 + 2 * Math.sin(angle / 5 - Math.PI / 2);
+			const dx = !isAnimated ? 0 : 2 + 2 * Math.cos(angle / 13 - Math.PI);
 
 			for (const el of animatedElements) {
 				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
