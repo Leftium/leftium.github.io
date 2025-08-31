@@ -14,6 +14,8 @@
 
 	let props: Props = $props();
 
+	let isAnimated = $state(false);
+
 	const size = props.size || 'calc(min(90svh, 90svw))';
 
 	const logoAnimation: Attachment = (element) => {
@@ -69,8 +71,8 @@
 
 			// Animate ligature
 			angle = time / 100;
-			const dy = 2 + 2 * Math.sin(angle / 5);
-			const dx = 2 + 2 * Math.cos(angle / 13);
+			const dy = !isAnimated ? 0 : 2 + 2 * Math.sin(angle / 5);
+			const dx = !isAnimated ? 0 : 2 + 2 * Math.cos(angle / 13);
 
 			for (const el of animatedElements) {
 				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
@@ -78,10 +80,25 @@
 			requestAnimationFrame(animate);
 		}
 		requestAnimationFrame(animate);
+
+		return function () {
+			if (ripples) {
+				ripples.destroy();
+			}
+		};
 	};
+
+	function onclick() {
+		isAnimated = !isAnimated;
+	}
 </script>
 
-<grid-logo {@attach logoAnimation} style:width={size} style:height={size}>
+<grid-logo
+	{@attach isAnimated ? logoAnimation : undefined}
+	style:--size={size}
+	{onclick}
+	role="none"
+>
 	<img src={logoShadow} class="animate" alt="" />
 	<img src={logoGlow} alt="" />
 	<div class="ripples" style:background-image="url({logoSquare})"></div>
@@ -92,6 +109,8 @@
 	grid-logo {
 		display: grid;
 		place-items: center;
+		width: var(--size);
+		height: var(--size);
 
 		* {
 			width: 100%;
