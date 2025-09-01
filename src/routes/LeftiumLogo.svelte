@@ -10,14 +10,14 @@
 	interface Props {
 		size?: string;
 		animated?: boolean;
-		toggleAnimationOnClick?: boolean;
+		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
 	}
 
 	let {
 		size = 'calc(min(90svh, 90svw))',
 		animated = true,
-		toggleAnimationOnClick = false,
+		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {}
 	}: Props = $props();
 
@@ -109,31 +109,34 @@
 		};
 	};
 
-	function onclick() {
-		if (toggleAnimationOnClick) {
-			animated = !animated;
+	function onclick(event: MouseEvent) {
+		// Shift key controls whether click drops or toggles animation.
+		if (toggleAnimationWithShift !== event.shiftKey) {
+			return;
+		}
 
-			if (animated) {
-				// Remove transitions before starting animation
-				for (const el of animatedElements) {
-					(el as HTMLElement).style.transition = '';
-				}
-				// Start animation
-				if (animate) {
-					requestAnimationFrame(animate);
-				}
-			} else {
-				// Stop animation - destroy ripples and reset transforms
-				if (ripples) {
-					ripples.destroy();
-					ripples = null;
-				}
+		animated = !animated;
 
-				// Reset transforms with smooth transition
-				for (const el of animatedElements) {
-					(el as HTMLElement).style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-					(el as HTMLElement).style.transform = 'translate(0%, 0%)';
-				}
+		if (animated) {
+			// Remove transitions before starting animation
+			for (const el of animatedElements) {
+				(el as HTMLElement).style.transition = '';
+			}
+			// Start animation
+			if (animate) {
+				requestAnimationFrame(animate);
+			}
+		} else {
+			// Stop animation - destroy ripples and reset transforms
+			if (ripples) {
+				ripples.destroy();
+				ripples = null;
+			}
+
+			// Reset transforms with smooth transition
+			for (const el of animatedElements) {
+				(el as HTMLElement).style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+				(el as HTMLElement).style.transform = 'translate(0%, 0%)';
 			}
 		}
 	}

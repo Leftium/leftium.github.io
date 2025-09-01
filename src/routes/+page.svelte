@@ -3,7 +3,7 @@
 </script>
 
 <center>
-	<LeftiumLogo toggleAnimationOnClick={true}></LeftiumLogo>
+	<LeftiumLogo></LeftiumLogo>
 	View the <a href="https://github.com/Leftium/leftium.github.io">source code</a>!
 </center>
 
