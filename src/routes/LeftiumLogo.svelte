@@ -74,9 +74,15 @@
 
 			// Animate ligature
 
-			angle = isAnimated ? angle + deltaTime / 100 : 0;
-			const dy = !isAnimated ? 0 : 2 + 2 * Math.sin(angle / 5 - Math.PI / 2);
-			const dx = !isAnimated ? 0 : 2 + 2 * Math.cos(angle / 13 - Math.PI);
+			angle = isAnimated ? angle + deltaTime: 0;
+
+			// Original movement in 0-4 range
+			const origX = 2 + 2 * Math.cos(angle / 971 - Math.PI);
+			const origY = 2 + 2 * Math.sin(angle /  601 - Math.PI / 2);
+
+			// Rotate -45 degrees: transform the 4x4 square into a diamond
+			const dx = !isAnimated ? 0 : ((origX + origY) * Math.sqrt(2)) / 2;
+			const dy = !isAnimated ? 0 : ((-origX + origY) * Math.sqrt(2)) / 2;
 
 			for (const el of animatedElements) {
 				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
