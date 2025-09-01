@@ -44,6 +44,44 @@
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
+		// Set up ResizeObserver to handle component resizing
+		let resizeObserver: ResizeObserver | null = null;
+		let lastWidth = ripplesElement?.offsetWidth;
+		let lastHeight = ripplesElement?.offsetHeight;
+
+		if (ripplesElement && typeof ResizeObserver !== 'undefined') {
+			resizeObserver = new ResizeObserver(() => {
+				const currentWidth = ripplesElement.offsetWidth;
+				const currentHeight = ripplesElement.offsetHeight;
+
+				// Only recreate if size actually changed
+				if (currentWidth !== lastWidth || currentHeight !== lastHeight) {
+					lastWidth = currentWidth;
+					lastHeight = currentHeight;
+
+					if (ripples && animated) {
+						// Destroy old instance
+						ripples.destroy();
+						ripples = null;
+
+						// Recreate with new resolution based on new size
+						const newResolution = Math.min(512, currentWidth / 2);
+						const newRippleOptions = {
+							...rippleOptions,
+							resolution: newResolution
+						};
+
+						try {
+							ripples = new Ripples(ripplesElement, newRippleOptions);
+						} catch (e) {
+							console.log(e);
+						}
+					}
+				}
+			});
+			resizeObserver.observe(ripplesElement);
+		}
+
 		let angle = $state(0);
 		let lastDropTime = $state(0);
 		let lastTime = 0;
@@ -105,6 +143,9 @@
 		return function () {
 			if (ripples) {
 				ripples.destroy();
+			}
+			if (resizeObserver) {
+				resizeObserver.disconnect();
 			}
 		};
 	};
