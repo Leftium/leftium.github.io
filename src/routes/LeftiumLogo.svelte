@@ -197,6 +197,10 @@
 		width: var(--size);
 		height: var(--size);
 		contain: layout style paint;
+		user-select: none;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
 
 		* {
 			width: 100%;
