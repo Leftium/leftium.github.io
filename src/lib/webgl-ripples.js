@@ -410,14 +410,19 @@ class Ripples {
 		this.setupPointerEvents();
 
 		// Init animation
+		this.animationId = null;
 		const step = () => {
 			if (!this.destroyed) {
 				this.step();
-				requestAnimationFrame(step);
+				if (this.running || this.needsRender) {
+					this.animationId = requestAnimationFrame(step);
+				} else {
+					this.animationId = null;
+				}
 			}
 		};
 
-		requestAnimationFrame(step);
+		this.animationId = requestAnimationFrame(step);
 
 		return this;
 	}
@@ -607,9 +612,8 @@ class Ripples {
 
 		if (this.running) {
 			this.update();
+			this.render();
 		}
-
-		this.render();
 	}
 
 	drawQuad() {
@@ -1091,11 +1095,30 @@ class Ripples {
 	pause() {
 		if (this.destroyed) return;
 		this.running = false;
+		// Render one more frame to show the paused state
+		this.needsRender = true;
+		setTimeout(() => {
+			this.needsRender = false;
+		}, 50);
 	}
 
 	play() {
 		if (this.destroyed) return;
 		this.running = true;
+		// Restart animation loop if it was stopped
+		if (!this.animationId) {
+			const step = () => {
+				if (!this.destroyed) {
+					this.step();
+					if (this.running || this.needsRender) {
+						this.animationId = requestAnimationFrame(step);
+					} else {
+						this.animationId = null;
+					}
+				}
+			};
+			this.animationId = requestAnimationFrame(step);
+		}
 	}
 
 	set(property, value) {

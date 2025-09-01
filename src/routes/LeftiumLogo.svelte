@@ -21,13 +21,14 @@
 		ripplesOptions: ripplesOptionsProp = {}
 	}: Props = $props();
 
+	let ripples: Ripples | null;
+	let animatedElements: Element[];
+	let animate: (time: number) => void;
+
 	const logoAnimation: Attachment = (element) => {
-		const animatedElements = [...element.children].filter((child) =>
-			child.classList.contains('animate')
-		);
+		animatedElements = [...element.children].filter((child) => child.classList.contains('animate'));
 		const ripplesElement = element.getElementsByClassName('ripples')[0] as HTMLElement | undefined;
 		const resolution = !ripplesElement ? 512 : Math.min(512, ripplesElement.offsetWidth / 2); // Apply ripples to the container but confine them to the content area
-
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
 			dropRadius: 20,
@@ -43,25 +44,29 @@
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
-		let ripples: Ripples;
 		let angle = $state(0);
 		let lastDropTime = $state(0);
-
-		if (ripplesElement) {
-			try {
-				ripples = new Ripples(ripplesElement, rippleOptions);
-			} catch (e) {
-				console.log(e);
-			}
-		}
-
 		let lastTime = 0;
-		function animate(time: number) {
+
+		animate = (time: number) => {
+			// Exit if we shouldn't be running
+			if (!animated) {
+				return;
+			}
 			const deltaTime = lastTime ? time - lastTime : 0;
 			lastTime = time;
 
-			// Automatic drops
-			if (lastDropTime !== null && ripples && ripplesElement) {
+			// Create ripples if needed
+			if (animated && !ripples && ripplesElement) {
+				try {
+					ripples = new Ripples(ripplesElement, rippleOptions);
+				} catch (e) {
+					console.log(e);
+				}
+			}
+
+			// Automatic drops (only when animated)
+			if (animated && lastDropTime !== null && ripples && ripplesElement) {
 				if (time - lastDropTime > 1500) {
 					lastDropTime = time;
 					const x = Math.random() * ripplesElement.offsetWidth;
@@ -72,23 +77,30 @@
 			}
 
 			// Animate ligature
-
-			angle = animated ? angle + deltaTime : 0;
+			angle += deltaTime;
 
 			// Original movement in 0-4 range
 			const origX = 2 + 2 * Math.cos(angle / 971 - Math.PI);
 			const origY = 2 + 2 * Math.sin(angle / 601 - Math.PI / 2);
 
 			// Rotate -45 degrees: transform the 4x4 square into a diamond
-			const dx = !animated ? 0 : ((origX + origY) * Math.sqrt(2)) / 2;
-			const dy = !animated ? 0 : ((-origX + origY) * Math.sqrt(2)) / 2;
+			const dx = animated ? ((origX + origY) * Math.sqrt(2)) / 2 : 0;
+			const dy = animated ? ((-origX + origY) * Math.sqrt(2)) / 2 : 0;
 
 			for (const el of animatedElements) {
 				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
 			}
+
+			// Only continue animation if animated
+			if (animated) {
+				requestAnimationFrame(animate);
+			}
+		};
+
+		// Start animation if initially animated
+		if (animated) {
 			requestAnimationFrame(animate);
 		}
-		requestAnimationFrame(animate);
 
 		return function () {
 			if (ripples) {
@@ -100,11 +112,34 @@
 	function onclick() {
 		if (toggleAnimationOnClick) {
 			animated = !animated;
+
+			if (animated) {
+				// Remove transitions before starting animation
+				for (const el of animatedElements) {
+					(el as HTMLElement).style.transition = '';
+				}
+				// Start animation
+				if (animate) {
+					requestAnimationFrame(animate);
+				}
+			} else {
+				// Stop animation - destroy ripples and reset transforms
+				if (ripples) {
+					ripples.destroy();
+					ripples = null;
+				}
+
+				// Reset transforms with smooth transition
+				for (const el of animatedElements) {
+					(el as HTMLElement).style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+					(el as HTMLElement).style.transform = 'translate(0%, 0%)';
+				}
+			}
 		}
 	}
 </script>
 
-<grid-logo {@attach animated ? logoAnimation : undefined} style:--size={size} {onclick} role="none">
+<grid-logo {@attach logoAnimation} style:--size={size} {onclick} role="none">
 	<img src={logoShadow} class="animate" alt="" />
 	<img src={logoGlow} alt="" />
 	<div class="ripples" style:background-image="url({logoSquare})"></div>
@@ -117,6 +152,7 @@
 		place-items: center;
 		width: var(--size);
 		height: var(--size);
+		contain: layout style paint;
 
 		* {
 			width: 100%;
@@ -126,6 +162,7 @@
 			/* Ensure all grid siblings share same stacking context;
                otherwise shadow is rendered above square. */
 			z-index: 0;
+			will-change: auto;
 		}
 
 		div {
