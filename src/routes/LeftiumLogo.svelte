@@ -9,14 +9,17 @@
 
 	interface Props {
 		size?: string;
+		animated?: boolean;
+		toggleAnimationOnClick?: boolean;
 		ripplesOptions?: RipplesOptions;
 	}
 
-	let props: Props = $props();
-
-	let isAnimated = $state(false);
-
-	const size = props.size || 'calc(min(90svh, 90svw))';
+	let {
+		size = 'calc(min(90svh, 90svw))',
+		animated = true,
+		toggleAnimationOnClick = false,
+		ripplesOptions: ripplesOptionsProp = {}
+	}: Props = $props();
 
 	const logoAnimation: Attachment = (element) => {
 		const animatedElements = [...element.children].filter((child) =>
@@ -38,11 +41,7 @@
 				height: 66
 			}
 		};
-
-		const ripplesOptions = {
-			...DEFAULT_RIPPLES_OPTIONS,
-			...props.ripplesOptions
-		};
+		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
 		let ripples: Ripples;
 		let angle = $state(0);
@@ -50,7 +49,7 @@
 
 		if (ripplesElement) {
 			try {
-				ripples = new Ripples(ripplesElement, ripplesOptions);
+				ripples = new Ripples(ripplesElement, rippleOptions);
 			} catch (e) {
 				console.log(e);
 			}
@@ -68,21 +67,21 @@
 					const x = Math.random() * ripplesElement.offsetWidth;
 					const y = Math.random() * ripplesElement.offsetHeight;
 					const strength = 0.1 + Math.random() * 0.04;
-					ripples.drop(x, y, ripplesOptions.dropRadius, strength);
+					ripples.drop(x, y, rippleOptions.dropRadius, strength);
 				}
 			}
 
 			// Animate ligature
 
-			angle = isAnimated ? angle + deltaTime: 0;
+			angle = animated ? angle + deltaTime : 0;
 
 			// Original movement in 0-4 range
 			const origX = 2 + 2 * Math.cos(angle / 971 - Math.PI);
-			const origY = 2 + 2 * Math.sin(angle /  601 - Math.PI / 2);
+			const origY = 2 + 2 * Math.sin(angle / 601 - Math.PI / 2);
 
 			// Rotate -45 degrees: transform the 4x4 square into a diamond
-			const dx = !isAnimated ? 0 : ((origX + origY) * Math.sqrt(2)) / 2;
-			const dy = !isAnimated ? 0 : ((-origX + origY) * Math.sqrt(2)) / 2;
+			const dx = !animated ? 0 : ((origX + origY) * Math.sqrt(2)) / 2;
+			const dy = !animated ? 0 : ((-origX + origY) * Math.sqrt(2)) / 2;
 
 			for (const el of animatedElements) {
 				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
@@ -99,16 +98,13 @@
 	};
 
 	function onclick() {
-		isAnimated = !isAnimated;
+		if (toggleAnimationOnClick) {
+			animated = !animated;
+		}
 	}
 </script>
 
-<grid-logo
-	{@attach isAnimated ? logoAnimation : undefined}
-	style:--size={size}
-	{onclick}
-	role="none"
->
+<grid-logo {@attach animated ? logoAnimation : undefined} style:--size={size} {onclick} role="none">
 	<img src={logoShadow} class="animate" alt="" />
 	<img src={logoGlow} alt="" />
 	<div class="ripples" style:background-image="url({logoSquare})"></div>
